@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub /gcbrun Button",
+  "version": "1.1.0",
+  "description": "Adds a /gcbrun button next to the Comment action on GitHub pull requests.",
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*/*/pull/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "permissions": []
+}
