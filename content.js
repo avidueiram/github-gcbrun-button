@@ -2,6 +2,8 @@ const STYLE_ID = 'gcbrun-button-style';
 const BUTTON_MARKER_ATTR = 'data-gcbrun-button';
 const BUTTON_CLASS = 'gcbrun-insert-button';
 const COMMAND_TEXT = '/gcbrun';
+const SUBMIT_RETRY_DELAY_MS = 120;
+const SUBMIT_MAX_RETRIES = 20;
 
 let injectTimeoutId = null;
 
@@ -39,6 +41,7 @@ function appendCommand(textarea) {
   const trimmedValue = currentValue.trim();
 
   if (trimmedValue.includes(COMMAND_TEXT)) {
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
     textarea.focus();
     return;
   }
@@ -52,25 +55,43 @@ function appendCommand(textarea) {
   }
 
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  textarea.dispatchEvent(new Event('change', { bubbles: true }));
   textarea.focus();
 }
 
-function submitComment(submitButton) {
-  if (submitButton.disabled) {
-    return;
-  }
+function getCommentSubmitButton(form) {
+  return Array.from(form.querySelectorAll('button.btn-primary[type="submit"]')).find(isCommentSubmitButton) || null;
+}
 
+function submitComment(submitButton, retryCount = 0) {
   const form = submitButton.closest('form');
   if (!form) {
     return;
   }
 
-  if (typeof form.requestSubmit === 'function') {
-    form.requestSubmit(submitButton);
+  const currentSubmitButton = getCommentSubmitButton(form);
+  if (!currentSubmitButton) {
     return;
   }
 
-  submitButton.click();
+  if (currentSubmitButton.disabled) {
+    if (retryCount >= SUBMIT_MAX_RETRIES) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      submitComment(submitButton, retryCount + 1);
+    }, SUBMIT_RETRY_DELAY_MS);
+
+    return;
+  }
+
+  if (typeof form.requestSubmit === 'function') {
+    form.requestSubmit(currentSubmitButton);
+    return;
+  }
+
+  currentSubmitButton.click();
 }
 
 function createGcbrunButton(submitButton) {
