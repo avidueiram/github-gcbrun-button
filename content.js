@@ -11,6 +11,30 @@ function isPullRequestPage() {
   return /^\/[^/]+\/[^/]+\/pull\/\d+/.test(window.location.pathname);
 }
 
+function isMergedPullRequest() {
+  const mergedState = document.querySelector(
+    '.gh-header-meta .State--merged, .gh-header-meta [aria-label="Merged"]'
+  );
+
+  if (mergedState) {
+    return true;
+  }
+
+  const mergedBanner = Array.from(
+    document.querySelectorAll('.TimelineItem, .gh-header-meta')
+  ).some((element) => {
+    return element.textContent?.includes('Pull request successfully merged and closed');
+  });
+
+  return mergedBanner;
+}
+
+function removeInjectedButtons() {
+  document.querySelectorAll(`[${BUTTON_MARKER_ATTR}="true"]`).forEach((button) => {
+    button.remove();
+  });
+}
+
 function injectStyles() {
   if (document.getElementById(STYLE_ID)) {
     return;
@@ -120,6 +144,11 @@ function isCommentSubmitButton(button) {
 
 function injectButtons() {
   if (!isPullRequestPage()) {
+    return;
+  }
+
+  if (isMergedPullRequest()) {
+    removeInjectedButtons();
     return;
   }
 
